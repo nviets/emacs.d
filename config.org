@@ -1,0 +1,164 @@
+* Introduction
+* Packages
+Load required packages
+#+BEGIN_SRC emacs-lisp
+(require 'haskell-mode)
+(require 'helm)
+(require 'nix-mode)
+(require 'poly-markdown)
+(require 'rainbow-delimiters)
+(require 'ranger)
+(require 'smart-mode-line)
+(require 'ssh)
+;(require 'powerline)
+#+END_SRC
+
+* Environment
+
+** Use the spacemacs theme
+#+BEGIN_SRC emacs-lisp
+(load-theme 'spacemacs-dark)
+#+END_SRC
+
+** Disable Bell
+Disable the bell and flash the mode line instead.
+#+BEGIN_SRC emacs-lisp
+(setq ring-bell-function
+      (lambda ()
+	(let ((orig-fg (face-foreground 'mode-line)))
+	  (set-face-foreground 'mode-line "#F2804F")
+	  (run-with-idle-timer 0.1 nil
+			       (lambda (fg) (set-face-foreground 'mode-line fg))
+			                                      orig-fg))))
+#+END_SRC
+
+** Set Path
+Set the PATH of the shell
+#+BEGIN_SRC emacs-lisp
+(setq exec-path (append exec-path '("/home/nathan/.nix-profile/bin")))
+(setenv "PATH" (concat (getenv "PATH") ":/home/nathan/.local/bin:/home/nathan/.nix-profile/bin"))
+(setenv "NIX_PATH" "nixpkgs=/home/nathan/.nix-defexpr/channels/nixpkgs")
+(defun eshell-mode-hook-func ()
+  (setq eshell-path-env (concat "/usr/local/bin:" eshell-path-env))
+  (setenv "PATH" (concat "/usr/local/bin:" (getenv "PATH")))
+  (define-key eshell-mode-map (kbd "M-s") 'other-window-or-split))
+#+END_SRC
+
+** Transparently open and compress files
+#+BEGIN_SRC emacs-lisp
+(auto-compression-mode t)
+#+END_SRC
+
+** Enhance Mode Line
+Enhance the mode line with some useful features
+#+BEGIN_SRC lisp
+(display-time-mode 1)
+(sml/setup)
+;(powerline-default-theme)
+;(setq powerline-arrow-shape 'arrow)   ;; the defaul
+#+END_SRC
+
+** Helm
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-x") 'helm-M-x)
+(put 'downcase-region 'disabled nil)
+#+END_SRC
+
+** Centralize ~ files
+Back up ~ files to /temp and autopurge files over a week old.
+#+BEGIN_SRC emacs-lisp
+;(setq backup-directory-alist `(("." . ,(expand-file-name "backups"))))
+;    (setq backup-directory-alist
+;          `((".*" . ,temporary-file-directory)))
+;    (setq auto-save-file-name-transforms
+;          `((".*" ,temporary-file-directory t)))
+;(message "Deleting old backup files...")
+;(let ((week (* 60 60 24 7))
+;      (current (float-time (current-time))))
+;  (dolist (file (directory-files temporary-file-directory t))
+;    (when (and (backup-file-name-p file)
+;               (> (- current (float-time (fifth (file-attributes file))))
+;                  week))
+;      (message "%s" file)
+;      (delete-file file))))
+#+END_SRC
+
+* Programming Tools
+
+** Editing Niceties
+#+BEGIN_SRC emacs-lisp
+(ac-config-default)
+(global-flycheck-mode)
+(show-paren-mode 1)
+(set-default 'indicate-empty-lines t)
+#+END_SRC
+
+** Org Mode
+#+BEGIN_SRC emacs-lisp
+(define-key global-map "\C-cl" 'org-store-link)
+(define-key global-map "\C-ca" 'org-agenda)
+(global-set-key "\C-cc" 'org-capture)
+(global-set-key "\C-cb" 'org-switchb)
+(setq org-log-done t)
+#+END_SRC
+
+** R Environment
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.md" . poly-markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.rmd" . poly-markdown-mode))
+(setq ess-use-auto-complete t)
+
+#+END_SRC
+
+** Haskell
+#+BEGIN_SRC emacs-lisp
+(eval-after-load 'haskell-mode
+  '(define-key haskell-mode-map [f8] 'haskell-navigate-imports))
+(eval-after-load 'haskell-mode '(progn
+  (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
+  (define-key haskell-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
+  (define-key haskell-mode-map (kbd "C-c C-n C-t") 'haskell-process-do-type)
+  (define-key haskell-mode-map (kbd "C-c C-n C-i") 'haskell-process-do-info)
+  (define-key haskell-mode-map (kbd "C-c C-n C-c") 'haskell-process-cabal-build)
+  (define-key haskell-mode-map (kbd "C-c C-n c") 'haskell-process-cabal)))
+(eval-after-load 'haskell-cabal '(progn
+  (define-key haskell-cabal-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
+  (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+  (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+  (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)))
+(eval-after-load 'haskell-mode
+  '(define-key haskell-mode-map (kbd "C-c C-o") 'haskell-compile))
+(eval-after-load 'haskell-cabal
+  '(define-key haskell-cabal-mode-map (kbd "C-c C-o") 'haskell-compile))
+(setq haskell-compile-cabal-build-command "stack build")
+(add-hook 'haskell-mode-hook #'rainbow-delimiters-mode)
+#+END_SRC
+
+** eshell
+#+BEGIN_SRC emacs-lisp
+(add-hook 'eshell-mode-hook 'eshell-mode-hook-func)
+#+END_SRC
+
+** SSH
+#+BEGIN_SRC emacs-lisp
+(add-hook 'ssh-mode-hook
+              (lambda ()
+                (setq ssh-directory-tracking-mode t)
+                (shell-dirtrack-mode t)
+                (setq dirtrackp nil)))
+#+END_SRC
+
+** Ranger
+#+BEGIN_SRC emacs-lisp
+(setq ranger-override-dired t)
+(setq ranger-override-dired-mode t)
+(setq ranger-parent-depth 2)
+(setq ranger-preview-file t)
+#+END_SRC
+
+** Miscellaneous
+Stuff that should be organized better
+#+BEGIN_SRC lisp
+(defalias 'yes-or-no-p 'y-or-n-p)
+(random t)
+#+END_SRC
