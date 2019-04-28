@@ -29,6 +29,36 @@
       fsType = "ext4";
     };
   };
+  
+  time.timeZone = "America/Chicago";
+  
+  hardware.enableRedistributableFirmware = true;
+  
+  networking = {
+    hostName = "pi";
+    wireless.enable = true;
+    #usePredictableInterfaces = false;
+    #interfaces.eth0.ip4 = [{
+    #  address = "";
+    #  prefixLength = "";
+    #}];
+    #defaultGateway = "";
+    #naeservers = [""];
+  };
+  
+  environment.systemPackages = with pkgs; [tmux vim htop wget]
+  
+  users.users.nathan = {
+    isNormalUser = true;
+    home = "/home/nathan";
+    uid = 7777;
+    shell = pkgs.fish;
+    extraGroups = [ "networkmanager" "wheel" ];
+  };
+  
+  services.openssh.enable = true;
+  
+  system.stateVersion = "19.03";
     
   # !!! Adding a swap file is optional, but strongly recommended!
   # swapDevices = [ { device = "/swapfile"; size = 1024; } ];
